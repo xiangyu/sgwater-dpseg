@@ -1,0 +1,180 @@
+Dirichlet process/Gibbs sampler word segmentation program
+(c) Sharon Goldwater sgwater@brown.edu, Aug. 2006
+v. 1.1: 12/12/07
+v. 1.2: 6/5/08
+v. 1.2.1: 1/02/16
+See also release_notes.txt.
+
+(This program also contains code written by Mark Johnson and Eugene
+Charniak, and minor patches by Margaret Fleck, Dan Gildea, and Antonios
+Anastasopoulos.)
+
+This program may be used freely for research purposes.  Please
+acknowledge the author in any publications containing results produced
+by this program or code derived from this program.
+
+This code is made available with no guarantees of functionality,
+correctness, or support.  I would appreciate knowing about any bugs
+you may find, but I will not necessarily fix them in a timely fashion.
+Below is the information you will need to run the program with common
+options; if you wish to use other options or modify the code, you are
+on your own.
+
+----------------------------------------
+
+Overview:
+
+This program implements the Gibbs sampling algorithms for the
+Dirichlet process and hierarchical Dirichlet process word segmentation
+models described in
+
+A Bayesian Framework for Word Segmentation: Exploring the Effects of
+Context.  Sharon Goldwater, Thomas L. Griffiths, and Mark Johnson.  In
+submission.
+
+Note that the Dirichlet process model and an earlier version of the
+hierarchical Dirichlet process model were originally described in
+
+Contextual Dependencies in Unsupervised Word Segmentation.  Sharon
+Goldwater, Thomas L. Griffiths, and Mark Johnson.  Proceedings of
+Coling/ACL, Sydney, 2006.
+
+and in more detail in
+
+Nonparametric Bayesian Models of Lexical Acquisition.  Sharon
+Goldwater. Ph.D. thesis, Brown University, 2006.
+
+However, the current version of this program implements a slightly
+different HDP model, uses fewer approximations during inference, and
+also fixes a bug in the previous HDP implementation.
+
+All papers are available at http://www.stanford.edu/~sgwater/
+
+----------------------------------------
+
+To compile:
+
+I have successfully compiled this code using g++ 4.1.2 (linux)
+	and 3.4.4 (cygwin).
+
+make [opt | segment] : compiles optimized version (this is what
+ you almost certainly want).
+make dbg : compiles with -g to allow debugging
+make prf : compiles to allow profiling
+make nrm : compiles non-optimized version (this turns on
+ lots of assertions and consistency checks, which will make the
+ code extremely slow for realistic data sets).
+
+----------------------------------------
+
+Usage: segment [options] [input_file]
+
+input_file: if no argument is given, the program will assume the input
+file "test.in".  Input should contain a single utterance per line,
+with spaces indicating correct word boundaries.  (The boundaries
+provided are used for scoring only; an input file with no word
+boundaries will work just fine otherwise.)
+
+common options:
+See ACL '06 paper or submitted article for more explanation.
+Default hyperparameter values are
+ a=20, b=.5 for the unigram model.
+ a=3000, A=100, b=.2, U=.5 for the bigram model.
+Other default values are given in parentheses.  Note that
+the default number of iterations may be OK for preliminary
+tests, but is almost certainly too low for convergence. A
+better value would be 10-20k.
+
+-h : prints usage info
+-V : prints version number.
+-a <alpha_0> : concentration parameter for unigram DP
+-A <alpha_1> : concentration parameter for bigram HDP
+-b <p_#> : prior probability of word boundary
+-U <p_$> : prior probability of utterance boundary in HDP
+-u t : runs the bigram model. (Otherwise runs unigram.  
+	Don't use other values for -u.)
+-H : turns on hyperparameter sampling, instead of using fixed
+        hyperparameters.  Gives poor results.
+-i <iters> : number of iterations of sampling (=1000)
+-I [utt|pho|ran|true] : boundary initialization (=ran).
+	none/all/random/true boundaries.
+-e [samp|gmax] : type of evaluation. (= samp)
+	samp returns a single sample at temperature = 1.
+	gmax returns a MAP approximation by annealing
+	further, down to 0.  (Note: this multiplies the
+	number of iterations specified by 3.)  
+	In practice, I have found little difference between these two.
+-r <seed> : random number seed (if you want to reproduce results).
+-w <iters> : see below
+-t <iters> : see below
+-o <file_prefix> : see below
+-v <verbose_level> : see below
+
+----------------------------------------
+
+Output:
+
+Status indicators are written to stderr (a dot is written
+every ten iterations, and the "temperature" is written
+when it changes.  
+**** NOTE: references to "temperature" in output and
+code-internally are actually 1/temperature.
+
+Output is written to stdout.  If no options are given,
+output consists of a list of all the parameter settings,
+followed by summary statistics of the reference lexicon,
+the segmented lexicon, the algorithm's performance
+relative to the boundaries given in the input file, and
+the total log probability of the proposed solution.
+(See example in test.out.) Performance is listed as follows:
+
+P 26.32 R 27.03 F 26.67 BP 51.72 BR 53.57 BF 52.63 LP 29.41 LR 26.32 LF 27.78
+
+where the metrics are Precision, Recall, and F-score on 
+tokens, boundaries (not including boundaries at utterance
+edges), and types (lexicon) respectively.
+
+output options:
+
+-v <verbose_level> : default is 0.  -v1 will print the
+	final segmentation to stdout.  -v2 will print 
+	the final lexicon to stdout. -v3 prints both.
+-w <N> : prints the current segmentation every N iterations
+	to the file specified by the -o option (required).
+	Using -w0 prints only the final segmentation.
+-t <N> : prints trace statistics every N iterations
+	to the file specified by the -o option (required).
+-o <file_prefix> : use with -w or -t to specify output file.
+	'-o file' prints to 'file.words' and/or 'file.stats'.
+
+----------------------------------------
+
+Examples:
+
+%> segment my_data
+
+(uses the input file my_data for unigram segmentation;
+prints to stdout.)
+
+%> segment -w0 -o test_unigram > test_unigram.out
+
+(uses the input file test.in for unigram segmentation;
+produces output test_unigram.out and test_unigram.words,
+which are provided in this distribution as examples.)
+
+%> segment -v3 -ut > test_bigram.out
+
+(uses the input file test.in for bigram segmentation;
+produces verbose output test_bigram.out, which is
+provided in this distribution as an example.)
+
+----------------------------------------
+
+Additional notes:
+
+1. References to annealing temperature in output and
+code-internally are actually 1/temperature.
+
+2. References to "monkeys" or "monkey model" in output
+and code-internally indicate the unigram phoneme
+model (monkeys typing at keyboards).

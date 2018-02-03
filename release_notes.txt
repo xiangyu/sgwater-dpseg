@@ -1,0 +1,87 @@
+Version 1.2.1 -- 1/02/16
+
+This version has some small updates contributed by Antonios
+Anastasopoulos which allow the code to compile under newer versions of
+g++. There is also a new flag in the Makefile (-std=c++0x) which I
+needed to make these work under g++ 4.4.7. Antonios used a different
+flag (-std=c++11) which did not work for me but I expect this differs
+depending on your compiler and you may need to try both.
+
+Version 1.2 -- 6/05/08
+
+Included in this distribution:
+1.  Code and example files for DP and HDP word segmentation models
+    (see below and README for additional information).
+2.  score_seg.prl, a script for scoring and error analysis
+    (see comments at the top of the script for more information).
+
+This version implements full table-tracking in the bigram model
+rather than using the Antoniak approximation described in the
+ACL 06 paper.  The HDP model is also slightly different in
+its handling of utterance boundaries; full details and updated
+results can be found on my web site in
+
+A Bayesian Framework for Word Segmentation: Exploring the Effects of
+Context.  Sharon Goldwater, Thomas L. Griffiths, and Mark Johnson.
+Cognition 112 (1), pp. 21--54. 2009.
+
+Note that results are quite similar to version 1.1, which fixed the
+bug in the original implementation, but still used the Antoniak
+approximation.  Optimal hyperparameter values are slightly different
+than in version 1.1: On the Bernstein-Ratner-Brent data set, the
+optimal values are approximately alpha0 = 3000, alpha1 = 100, p# = .2,
+p$ = .5.  These values are now the defaults in this program, or can
+be set using command-line arguments -a3000, -A100, -b.2, -U.5:
+
+segment -ut -i20000 -a3000 -A100 -b0.2 -U.5 -Iran br-phono.txt
+
+P 75.27 R 69.27 F 72.14 BP 90.71 BR 80.47 BF 85.28 LP 62.81 LR 53.82 LF 57.97
+
+****************************************
+
+Version 1.1 -- 12/12/07
+
+This version is an interim release fixing a bug in the previous version,
+but not including several planned changes (see below).
+
+Compilation:
+
+1.  Now compiles under (at least) g++ 3.4, 4.1.  May no longer compile
+under 3.3.
+2.  Typing "make" now builds the optimized version by default (still
+called "segment").
+
+Bug fixes:
+
+I have corrected an implementation bug in which alpha0 was
+accidentally used instead of alpha1 in a couple of places.  This bug
+only affected the results of the bigram model. The program should now
+correctly implement the bigram model described in our ACL 06 paper.
+Be aware, however, that since publication we realized that the
+approximation we mention for estimating the number of tables assigned
+to each word in the bigram model does not take into account the fact
+that some words have higher probability under the unigram generator
+(P_0) than others.  Thus, it is less accurate than we had previously
+believed.
+
+Parameter values/expected results:
+
+Optimal parameter values have changed significantly for the bigram
+model.  On the data set used in our ACL paper, the optimal values are
+approximately alpha0 = 3000, alpha1 = 300, p# = .2.  These values are
+now the defaults in this program, or can be set using command-line
+arguments -a3000, -A300, -b.2.  In general, the larger the value of
+-A, the fewer boundaries will be inserted.  For a fixed value of -A,
+larger values of -a will tend to produce larger lexicon sizes, and
+mostly affects lexicon scores.  Here is an example result running with
+the following parameter values:
+
+segment -ut -i20000 -a3000 -A300 -b0.2 -Iran br-phono.txt
+
+P 75.71 R 72.07 F 73.84 BP 89.88 BR 83.76 BF 86.72 LP 63.09 LR 50.34 LF 56
+
+Note that these scores are several points lower than the best scores
+in the previous (incorrect) version.  Hopefully this doesn't ruin
+anyone's day (and I expect if you're trying to do better than us,
+you'll be quite pleased).
+
